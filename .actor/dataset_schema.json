@@ -1,0 +1,115 @@
+{
+    "$schema": "https://json-schema.org/draft/2020-12/schema",
+    "actorSpecification": 1,
+    "title": "Dataset Schema",
+    "fields": {
+        "type": "object",
+        "properties": {
+            "record_id": {
+                "title": "Record ID",
+                "type": "string",
+                "description": "osm:<type>/<id> for OSM-discovered leads; a deterministic seed:<hash> for seed-list leads - stable across runs for the same input."
+            },
+            "event_type": {
+                "title": "Event Type",
+                "type": "string",
+                "description": "Always NEW_LISTING - this actor has no cross-run delta-tracking concept."
+            },
+            "scraped_at": { "title": "Scraped At", "type": "string", "description": "ISO-8601 timestamp of this enrichment." },
+            "is_new": {
+                "title": "Is New",
+                "type": ["boolean", "null"],
+                "description": "true if this exact business (identified by OSM id, or normalized name+domain for seed-list leads) was never seen in a prior run of this Actor; false if it was. Tracked in this Actor's own key-value store regardless of the skipKnownLeads input - that flag only controls whether an already-known lead is skipped, not whether it's tracked. Unlike a registry-monitoring actor, this is a simple seen/not-seen signal, not a richer NEW_LISTING/STATUS_CHANGE/UPDATED/CLOSED classification - a business's own listing has no observable status this actor tracks."
+            },
+            "source_url": { "title": "Source URL", "type": ["string", "null"], "description": "The business's own website, when known." },
+            "recipient_or_defendant_name": { "title": "Business Name", "type": ["string", "null"] },
+            "entity_identifier_native": {
+                "title": "Native Entity Identifier",
+                "type": ["string", "null"],
+                "description": "Raw OSM type/id (e.g. node/48213456) for OSM discovery; null for seed-list leads (no native source id exists for a customer-typed name)."
+            },
+            "value_native": { "title": "Value (native)", "type": ["string", "null"], "description": "Not applicable to this actor - always null." },
+            "value_currency": { "title": "Value Currency", "type": ["string", "null"], "description": "Not applicable to this actor - always null." },
+            "value_usd_normalized": { "title": "Value (USD)", "type": ["number", "null"], "description": "Not applicable to this actor - always null." },
+            "effective_date_iso": { "title": "Effective Date", "type": ["string", "null"], "description": "Not applicable to this actor - always null." },
+            "publish_date_iso": { "title": "Publish Date", "type": ["string", "null"], "description": "Not applicable to this actor - always null." },
+            "category_or_type": { "title": "Category", "type": ["string", "null"], "description": "business_listing_osm or business_listing_seed." },
+            "status_or_estado": { "title": "Status", "type": ["string", "null"], "description": "Not applicable to this actor - always null." },
+            "awarding_or_regulating_agency": { "title": "Agency", "type": ["string", "null"], "description": "Not applicable to this actor - always null." },
+            "jurisdiction": { "title": "Jurisdiction", "type": "string", "description": "OSM for Overpass discovery; GLOBAL for seed-list leads (no single jurisdiction applies)." },
+            "source_document_url": { "title": "Source Document URL", "type": ["string", "null"], "description": "Not applicable to this actor - always null." },
+            "reference_number": { "title": "Reference Number", "type": ["string", "null"], "description": "Not applicable to this actor - always null." },
+            "discoverySource": { "title": "Discovery Source", "type": "string", "enum": ["seedList", "osm"] },
+            "website": { "title": "Website", "type": ["string", "null"] },
+            "emailsFound": {
+                "title": "Emails Found",
+                "type": "array",
+                "items": { "type": "string" },
+                "description": "mailto: links and regex-matched addresses found on the crawled page(s)."
+            },
+            "emailPlausible": {
+                "title": "Email Plausible",
+                "type": ["boolean", "null"],
+                "description": "true when the domain has a non-null MX record set (dns.promises.resolveMx). null when no domain was available to check."
+            },
+            "emailPlausibilityMethod": {
+                "title": "Email Plausibility Method",
+                "type": ["string", "null"],
+                "enum": ["mx_record_present", "null_mx", "mx_lookup_failed", "no_domain", null]
+            },
+            "websiteContentUnavailable": {
+                "title": "Website Content Unavailable",
+                "type": "boolean",
+                "description": "true when the site could not be fetched, is disallowed by robots.txt, or looks like a client-side-rendered SPA with no server-delivered content - this actor never escalates to a headless browser."
+            },
+            "byokEnrichment": {
+                "title": "BYOK Enrichment",
+                "type": ["object", "null"],
+                "description": "null when neither hunterApiKey nor peopleDataLabsApiKey was supplied. Otherwise per-provider used/data/error using the CUSTOMER's own key - billed by that vendor to the customer directly, never to this actor's own PPE price.",
+                "properties": {
+                    "hunterIo": { "type": ["object", "null"] },
+                    "peopleDataLabs": { "type": ["object", "null"] }
+                }
+            },
+            "intentScore": {
+                "title": "Intent Score",
+                "type": ["number", "null"],
+                "description": "0-100 heuristic buying-intent score from Claude Haiku 4.5, only when includeIntentScore was enabled and the model call succeeded."
+            },
+            "intentScoreRationale": { "title": "Intent Score Rationale", "type": ["string", "null"] },
+            "intentScoreDisclaimer": {
+                "title": "Intent Score Disclaimer",
+                "type": ["string", "null"],
+                "description": "Mandatory whenever intent scoring was attempted - never omitted. States this is a heuristic LLM read of public text, not a verified fact."
+            }
+        }
+    },
+    "views": {
+        "overview": {
+            "title": "Overview",
+            "transformation": {
+                "fields": [
+                    "recipient_or_defendant_name",
+                    "website",
+                    "discoverySource",
+                    "emailsFound",
+                    "emailPlausible",
+                    "intentScore",
+                    "jurisdiction"
+                ]
+            },
+            "display": {
+                "component": "table",
+                "columns": [
+                    { "label": "Business", "format": "text", "field": "recipient_or_defendant_name" },
+                    { "label": "Website", "format": "text", "field": "website" },
+                    { "label": "Source", "format": "text", "field": "discoverySource" },
+                    { "label": "Emails Found", "format": "text", "field": "emailsFound" },
+                    { "label": "Email Plausible", "format": "text", "field": "emailPlausible" },
+                    { "label": "Intent Score", "format": "text", "field": "intentScore" },
+                    { "label": "Jurisdiction", "format": "text", "field": "jurisdiction" }
+                ]
+            }
+        }
+    }
+}

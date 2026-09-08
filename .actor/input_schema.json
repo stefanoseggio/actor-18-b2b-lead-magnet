@@ -1,0 +1,65 @@
+{
+    "$schema": "https://apify.com/schemas/v1/input.ide.json",
+    "title": "Universal B2B Lead Magnet & Intent Enricher Configuration",
+    "type": "object",
+    "schemaVersion": 1,
+    "properties": {
+        "discoveryMode": {
+            "title": "Discovery mode",
+            "type": "string",
+            "description": "seedList (Mode A): enrich the company names/domains you supply directly - zero discovery-layer risk. osmOverpass (Mode B): discover candidate businesses from OpenStreetMap's Overpass API within a bounding box (ODbL-licensed - Google Maps is intentionally excluded from discovery because its Maps/Earth Additional ToS and Maps Platform ToS both prohibit building a business-listings/mailing-list database from Maps content).",
+            "editor": "select",
+            "enum": ["seedList", "osmOverpass"],
+            "enumTitles": ["Seed list (company names/domains you supply)", "OSM Overpass (discover within a bounding box)"],
+            "default": "seedList"
+        },
+        "seedList": {
+            "title": "Seed list (Mode A)",
+            "type": "array",
+            "description": "Company names or website domains/URLs to enrich directly. Required (non-empty) when discoveryMode is \"seedList\". Mixed entries are fine - each is heuristically read as either a bare name (\"Acme Corp\") or a domain/URL (\"acme.com\", \"https://acme.com\").",
+            "editor": "stringList",
+            "default": []
+        },
+        "overpassBbox": {
+            "title": "Overpass bounding box (Mode B)",
+            "type": "string",
+            "description": "\"south,west,north,east\" in decimal degrees, e.g. \"50.70,-1.90,50.90,-1.30\". Required when discoveryMode is \"osmOverpass\". Queries the public overpass-api.de mirror, which is fair-use only - budget a self-hosted Overpass instance for production volume.",
+            "editor": "textfield"
+        },
+        "maxLeads": {
+            "title": "Max leads this run",
+            "type": "integer",
+            "description": "Hard cap on how many candidates are enriched and charged this run.",
+            "default": 50,
+            "minimum": 1,
+            "maximum": 5000
+        },
+        "includeIntentScore": {
+            "title": "Include LLM intent score (Enriched Lead)",
+            "type": "boolean",
+            "description": "When enabled, each lead gets one Claude Haiku 4.5 call scoring hiring-page, funding-news, and tech-stack signals read only from the business's own crawled site text (always paired with a mandatory disclaimer field - a heuristic read of public text, never a verified fact). Bills the enriched_lead PPE event ($0.015/record) instead of basic_lead ($0.002/record). Requires this Actor's own ANTHROPIC_API_KEY environment variable to be configured on the Actor - this is the operator's own compute cost (priced into the Enriched Lead rate), not a customer BYOK field.",
+            "default": false
+        },
+        "hunterApiKey": {
+            "title": "Hunter.io API key (BYOK, optional)",
+            "type": "string",
+            "description": "Your own Hunter.io API key. When supplied, this actor calls Hunter.io's domain-search endpoint using YOUR key - Hunter.io bills your own account directly, never this actor's own PPE price.",
+            "editor": "textfield",
+            "isSecret": true
+        },
+        "peopleDataLabsApiKey": {
+            "title": "People Data Labs API key (BYOK, optional)",
+            "type": "string",
+            "description": "Your own People Data Labs API key, used and billed the same way as hunterApiKey - your own account is charged by People Data Labs directly.",
+            "editor": "textfield",
+            "isSecret": true
+        },
+        "skipKnownLeads": {
+            "title": "Skip already-known leads",
+            "type": "boolean",
+            "description": "When enabled, a lead already discovered (and charged for) in a prior run of this Actor is skipped before the enrichment waterfall runs - no repeat website crawl, no repeat BYOK/intent-score calls, and no repeat basic_lead/enriched_lead charge for the same business. Identity is a stable id derived from the OSM id (Mode B) or normalized name+domain (Mode A), persisted in this Actor's own key-value store across runs. Leave off (default) for a full re-enrichment on every run, e.g. if a business's own site content may have changed since last time.",
+            "default": false
+        }
+    },
+    "required": []
+}
