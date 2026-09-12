@@ -1,5 +1,12 @@
 # B2B Lead Enrichment Engine - Contact Discovery & Buying-Intent Scoring (Global)
 
+[![Run on Apify](https://apify.com/img/run-on-apify.svg)](https://apify.com/stefano_seggio/actor-18-b2b-lead-magnet)
+
+[![Built for Apify](https://img.shields.io/badge/Built%20for-Apify-1a1a2e?logo=apify&logoColor=white)](https://apify.com)
+[![Pay-Per-Event pricing](https://img.shields.io/badge/Pay--Per--Event-from%20%240.002%2Frecord-brightgreen)](#pricing-pay-per-event)
+[![TypeScript](https://img.shields.io/badge/TypeScript-100%25-3178C6?logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
+[![Apache 2.0 License](https://img.shields.io/badge/license-Apache%202.0-blue.svg)](./LICENSE)
+
 ## Executive Value Proposition
 
 Hand-prospecting a single company means opening its website, hunting down a contact page, eyeballing whether an email looks real, and reading the site for hiring or funding signals before deciding whether it's worth a rep's time - several minutes of manual work per lead, every time. This Actor runs that same sequence automatically - website crawl, DNS/MX plausibility check on every email found, and an optional AI-scored buying-intent read of the business's own public text - across up to 5,000 leads in one run, from either a seed list you already have or a compliant OpenStreetMap-based discovery pass. Enable `skipKnownLeads` on a recurring run and a business already discovered in a prior run is skipped entirely - no repeat crawl, no repeat enrichment call, no repeat charge - so ongoing account monitoring only ever pays for genuinely new leads.
@@ -9,6 +16,22 @@ Hand-prospecting a single company means opening its website, hunting down a cont
 - **Recurring account-based prospecting without repeat spend.** Point the Actor at the same seed list of target accounts on a weekly or monthly schedule with `skipKnownLeads: true`. Every business already discovered and charged for in a prior run is skipped before the enrichment waterfall runs, so a standing account list only incurs cost for names that are genuinely new to the run history - not a full re-crawl every cycle.
 - **Compliant territory expansion via geographic discovery.** Sales-ops teams entering a new region can discover candidate businesses inside a bounding box using OpenStreetMap's Overpass API (`osmOverpass` mode) instead of scraping Google Maps, which its own Additional Terms and Maps Platform Terms explicitly prohibit using to build a business-listings database. Every discovered lead still gets the same site-crawl, DNS/MX, and optional enrichment treatment as a seed-list lead.
 - **Intent-prioritized SDR handoff.** Run a large candidate list with `includeIntentScore: true` and each lead comes back with a 0-100 buying-intent score and rationale read from Claude Haiku 4.5's analysis of that business's own crawled page text (careers pages, tech-stack hints, etc.), each paired with a mandatory disclaimer that it is a heuristic read, not a verified fact. Sales leadership can triage a long list down to the highest-scored subset before handing it to reps, instead of working the list in raw discovery order.
+
+## Quick start
+
+Requires the [Apify CLI](https://docs.apify.com/cli/) (`npm i -g apify-cli`) and `apify login` once per machine:
+
+```bash
+apify call actor-18-b2b-lead-magnet --input '{
+  "discoveryMode": "seedList",
+  "seedList": ["acme.com", "Beta Consulting LLC", "https://gamma-industries.example"],
+  "maxLeads": 25,
+  "includeIntentScore": true,
+  "skipKnownLeads": true
+}'
+```
+
+`includeIntentScore: true` bills every lead at the `enriched_lead` tier ($0.015/record); drop it (or set it to `false`) to bill the cheaper `basic_lead` tier ($0.002/record) instead. See [`examples/`](./examples) for the same call via the `apify-client` SDK in Node.js and Python.
 
 ## Input
 
@@ -63,17 +86,21 @@ Hand-prospecting a single company means opening its website, hunting down a cont
 
 Every outbound call - OSM Overpass, the discovered business's own website, and (when configured) Hunter.io, People Data Labs, or the Anthropic API - goes through a shared `fetchWithRetry` helper with exponential-backoff retry (each retry's delay doubles from a 500ms base), triggered on network errors, HTTP 429, and any 5xx response; individual call sites configure 1-2 retries for their specific external host. A 4xx response other than 429 (e.g. a 404 or a BYOK vendor's 401) is returned as-is rather than retried, so callers can inspect and handle it directly. If a business's site can't be fetched, is disallowed by robots.txt, or looks like a client-rendered SPA with no server-delivered content, the record is marked `websiteContentUnavailable: true` rather than escalating to a headless browser - a disclosed coverage gap, not a silent failure. Cross-run lead identity (`skipKnownLeads` and the `is_new` field) is persisted in a named Apify key-value store, capped at the 20,000 most-recently-seen leads, so it survives independently of any single run.
 
-## Pricing
+## Pricing (Pay-Per-Event)
 
 This Actor uses pay-per-event pricing with two tiers, never blended:
 
-| Event | What it covers | Price |
-|---|---|---|
-| `basic_lead` | Discovery + website crawl + DNS/MX check | $0.002/record |
-| `enriched_lead` | Everything in `basic_lead` plus the Claude buying-intent score | $0.015/record |
+| Event | Title | What it covers | Price |
+|---|---|---|---|
+| `basic_lead` | Basic Lead | Discovery + website crawl + DNS/MX check | $0.002/record |
+| `enriched_lead` | Enriched Lead + Intent Score | Everything in `basic_lead` plus the Claude buying-intent score | $0.015/record |
 
 A BYOK Hunter.io or People Data Labs key is billed by that provider directly to your own account - never marked up or folded into either tier above.
 
 ## Support & Enterprise SLA
 
 This Actor is built and maintained by an independent developer, not a staffed vendor team - there is no dedicated support desk or contractual uptime SLA on offer. Questions, bugs, or source-coverage requests are handled through the Apify Store's Issues tab and are typically addressed within 48 hours.
+
+---
+
+This Actor is part of **Delta Registry** — pay-per-event regulatory & compliance data infrastructure built and operated by Stefano Seggio. For professional inquiries or enterprise licensing, connect on [LinkedIn](https://www.linkedin.com/in/stefanoseggio-deltaregistry); for the rest of the fleet, see [github.com/stefanoseggio](https://github.com/stefanoseggio).

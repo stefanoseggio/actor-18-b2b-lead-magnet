@@ -1,0 +1,20 @@
+{
+  "oneLineDescription": "Apify Actor that discovers and enriches B2B leads from a seed list or OpenStreetMap Overpass, verifies emails via DNS/MX, and optionally scores buying intent with Claude Haiku 4.5.",
+  "topics": [
+    "apify",
+    "apify-actor",
+    "lead-generation",
+    "lead-enrichment",
+    "typescript",
+    "web-scraping",
+    "b2b-leads",
+    "email-verification",
+    "email-finder",
+    "openstreetmap",
+    "overpass-api",
+    "sales-intelligence",
+    "intent-scoring",
+    "dns-mx-validation",
+    "pay-per-event"
+  ]
+}
