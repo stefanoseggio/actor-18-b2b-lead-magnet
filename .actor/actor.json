@@ -1,21 +1,24 @@
 {
-    "$schema": "https://apify.com/schemas/v1/actor.ide.json",
-    "actorSpecification": 1,
-    "name": "actor-18-b2b-lead-magnet",
-    "title": "Universal B2B Lead Magnet & Intent Enricher",
-    "description": "Discovers B2B leads via a customer seed list or OpenStreetMap Overpass (Google Maps excluded on ToS grounds), crawls each site for contact info, checks email plausibility via DNS/MX, supports BYOK Hunter.io/PDL enrichment, and optionally scores buying intent via Claude Haiku 4.5.",
-    "version": "1.1",
-    "buildTag": "latest",
-    "minMemoryMbytes": 256,
-    "maxMemoryMbytes": 512,
-    "meta": {
-        "templateId": "ts-crawlee-cheerio",
-        "generatedBy": "Claude Code with Claude Sonnet 5"
-    },
-    "inputSchema": "./input_schema.json",
-    "outputSchema": "./output_schema.json",
-    "storages": {
-        "dataset": "./dataset_schema.json"
-    },
-    "changelog": "../CHANGELOG.md"
+  "$schema": "https://apify.com/schemas/v1/actor.ide.json",
+  "actorSpecification": 1,
+  "name": "actor-18-b2b-lead-magnet",
+  "title": "OSM Business Data + DNS Verify - B2B Lead JSON Feed",
+  "description": "Discovers B2B leads from your own seed list or OpenStreetMap's Overpass API (Google Maps excluded on ToS grounds), crawls each site for contact emails, verifies plausibility via DNS/MX, supports BYOK Hunter.io/People Data Labs enrichment, and optionally scores buying intent with Claude Haiku 4.5.",
+  "version": "1.1",
+  "buildTag": "latest",
+  "minMemoryMbytes": 256,
+  "maxMemoryMbytes": 512,
+  "meta": {
+    "templateId": "ts-crawlee-cheerio",
+    "generatedBy": "Claude Code with Claude Sonnet 5"
+  },
+  "inputSchema": "./input_schema.json",
+  "outputSchema": "./output_schema.json",
+  "storages": {
+    "dataset": "./dataset_schema.json"
+  },
+  "changelog": "../CHANGELOG.md",
+  "categories": [
+    "LEAD_GENERATION"
+  ]
 }

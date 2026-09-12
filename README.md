@@ -1,39 +1,37 @@
-# Universal B2B Lead Magnet & Intent Enricher
+# B2B Lead Enrichment Engine - Contact Discovery & Buying-Intent Scoring (Global)
 
-A compliant B2B lead discovery and enrichment pipeline: point it at a list of company names/domains, or a geographic bounding box, and get back structured leads with contact-plausibility checks and optional AI-scored buying intent - without touching Google Maps data, which its own Terms of Service forbid using this way.
+## Executive Value Proposition
 
-## Why use this Actor?
+Hand-prospecting a single company means opening its website, hunting down a contact page, eyeballing whether an email looks real, and reading the site for hiring or funding signals before deciding whether it's worth a rep's time - several minutes of manual work per lead, every time. This Actor runs that same sequence automatically - website crawl, DNS/MX plausibility check on every email found, and an optional AI-scored buying-intent read of the business's own public text - across up to 5,000 leads in one run, from either a seed list you already have or a compliant OpenStreetMap-based discovery pass. Enable `skipKnownLeads` on a recurring run and a business already discovered in a prior run is skipped entirely - no repeat crawl, no repeat enrichment call, no repeat charge - so ongoing account monitoring only ever pays for genuinely new leads.
 
-- **ToS-safe discovery.** Google's Maps/Earth Additional Terms and Maps Platform Terms both explicitly prohibit building a "business listings database" from Maps content - a near-exact description of what a lead-gen tool needs. This Actor discovers via OpenStreetMap's ODbL-licensed Overpass API instead (which explicitly permits bulk extraction) or your own supplied list - never Google Maps.
-- **Real signal, not guesswork.** Every lead gets a live DNS/MX check on its domain (a real, deliberately-configured mail-receiving path, not a guessed email), and an optional Claude-scored buying-intent signal read only from the business's own public site text.
-- **BYOK for third-party enrichment.** Bring your own Hunter.io or People Data Labs key and that provider bills *you* directly - this Actor's own price never includes a markup on services you already pay for.
-- **Skip what you already have.** Enable `skipKnownLeads` on a recurring run and already-processed leads are skipped entirely - no re-crawl, no re-charge.
+## Enterprise Use Cases
 
-## How to use it
+- **Recurring account-based prospecting without repeat spend.** Point the Actor at the same seed list of target accounts on a weekly or monthly schedule with `skipKnownLeads: true`. Every business already discovered and charged for in a prior run is skipped before the enrichment waterfall runs, so a standing account list only incurs cost for names that are genuinely new to the run history - not a full re-crawl every cycle.
+- **Compliant territory expansion via geographic discovery.** Sales-ops teams entering a new region can discover candidate businesses inside a bounding box using OpenStreetMap's Overpass API (`osmOverpass` mode) instead of scraping Google Maps, which its own Additional Terms and Maps Platform Terms explicitly prohibit using to build a business-listings database. Every discovered lead still gets the same site-crawl, DNS/MX, and optional enrichment treatment as a seed-list lead.
+- **Intent-prioritized SDR handoff.** Run a large candidate list with `includeIntentScore: true` and each lead comes back with a 0-100 buying-intent score and rationale read from Claude Haiku 4.5's analysis of that business's own crawled page text (careers pages, tech-stack hints, etc.), each paired with a mandatory disclaimer that it is a heuristic read, not a verified fact. Sales leadership can triage a long list down to the highest-scored subset before handing it to reps, instead of working the list in raw discovery order.
 
-1. Choose a discovery mode: `seedList` (paste company names or domains you already have) or `osmOverpass` (discover businesses within a bounding box).
-2. Optionally supply your own Hunter.io / People Data Labs key for deeper contact enrichment, and/or enable `includeIntentScore` for an AI-scored buying-intent signal.
-3. Run it. Each lead becomes one dataset row with contact info, plausibility checks, and (if enabled) an intent score with its own transparency disclaimer.
+## Input
 
 ```json
 {
   "discoveryMode": "seedList",
   "seedList": ["acme.com", "Beta Consulting LLC", "https://gamma-industries.example"],
-  "includeIntentScore": true
+  "maxLeads": 50,
+  "includeIntentScore": true,
+  "skipKnownLeads": true
 }
 ```
 
-## Input
-
 | Field | Type | Default | Description |
 |---|---|---|---|
-| `discoveryMode` | string | `seedList` | `seedList` (enrich names/domains you supply) or `osmOverpass` (discover within a bounding box). |
-| `seedList` | array | `[]` | Company names or domains/URLs, mixed freely - required for `seedList` mode. |
-| `overpassBbox` | string | - | `"south,west,north,east"` in decimal degrees - required for `osmOverpass` mode. |
-| `maxLeads` | integer | `50` | Hard cap on leads enriched (and charged) this run. |
-| `includeIntentScore` | boolean | `false` | Adds a Claude-scored buying-intent signal per lead (bills the higher `enriched_lead` tier). |
-| `hunterApiKey` / `peopleDataLabsApiKey` | string | - | Your own BYOK keys - that provider bills you directly, not this Actor. |
-| `skipKnownLeads` | boolean | `false` | Skip (and don't re-charge for) a lead already processed in a prior run - see "Delta mode" below. |
+| `discoveryMode` | string | `seedList` | `seedList` (enrich names/domains you supply directly) or `osmOverpass` (discover candidate businesses from OpenStreetMap's Overpass API within a bounding box). |
+| `seedList` | array | `[]` | Company names or website domains/URLs to enrich, mixed freely. Required (non-empty) when `discoveryMode` is `seedList`. |
+| `overpassBbox` | string | - | `"south,west,north,east"` in decimal degrees, e.g. `"50.70,-1.90,50.90,-1.30"`. Required when `discoveryMode` is `osmOverpass`. |
+| `maxLeads` | integer | `50` | Hard cap on how many candidates are enriched and charged this run (1-5000). |
+| `includeIntentScore` | boolean | `false` | Adds one Claude Haiku 4.5 buying-intent call per lead, read only from that business's own crawled site text. Bills the `enriched_lead` tier instead of `basic_lead`. |
+| `hunterApiKey` | string | - | Your own Hunter.io API key (BYOK). Hunter.io bills your account directly, never this Actor's own price. |
+| `peopleDataLabsApiKey` | string | - | Your own People Data Labs API key (BYOK), billed the same way as `hunterApiKey`. |
+| `skipKnownLeads` | boolean | `false` | When enabled, a lead already discovered (and charged for) in a prior run is skipped before the enrichment waterfall runs - no repeat crawl, no repeat BYOK/intent-score call, no repeat charge. |
 
 ## Output
 
@@ -59,31 +57,23 @@ A compliant B2B lead discovery and enrichment pipeline: point it at a list of co
 }
 ```
 
-You can download the dataset in various formats such as JSON, HTML, CSV, or Excel.
+`record_id` is `osm:<type>/<id>` for OSM-discovered leads or a deterministic `seed:<hash>` for seed-list leads, stable across runs for the same input. `is_new` reflects whether this exact business (by OSM id, or normalized name+domain for seed-list leads) was ever seen in a prior run of this Actor - tracked regardless of whether `skipKnownLeads` is on. The dataset can be downloaded as JSON, HTML, CSV, or Excel.
 
-## Delta mode - skip already-known leads
+## Reliability
 
-Enable `skipKnownLeads: true` on a recurring run against the same seed list or bounding box, and a lead already discovered in a prior run is skipped **before** the enrichment waterfall runs - no repeat website crawl, no repeat BYOK/intent-score calls, and no repeat charge. `is_new` on every record tells you whether this is the first time that exact business has been seen, regardless of whether you've turned skipping on.
+Every outbound call - OSM Overpass, the discovered business's own website, and (when configured) Hunter.io, People Data Labs, or the Anthropic API - goes through a shared `fetchWithRetry` helper with exponential-backoff retry (each retry's delay doubles from a 500ms base), triggered on network errors, HTTP 429, and any 5xx response; individual call sites configure 1-2 retries for their specific external host. A 4xx response other than 429 (e.g. a 404 or a BYOK vendor's 401) is returned as-is rather than retried, so callers can inspect and handle it directly. If a business's site can't be fetched, is disallowed by robots.txt, or looks like a client-rendered SPA with no server-delivered content, the record is marked `websiteContentUnavailable: true` rather than escalating to a headless browser - a disclosed coverage gap, not a silent failure. Cross-run lead identity (`skipKnownLeads` and the `is_new` field) is persisted in a named Apify key-value store, capped at the 20,000 most-recently-seen leads, so it survives independently of any single run.
 
-There's no "changed" or "closed" event here: unlike a government registry, a business's own web presence has no observable status this Actor tracks - just new-or-already-known.
+## Pricing
 
-## Pricing - two tiers, never blended
+This Actor uses pay-per-event pricing with two tiers, never blended:
 
 | Event | What it covers | Price |
 |---|---|---|
-| `basic_lead` | Discovery + website crawl + DNS/MX check | **$0.002/record** |
-| `enriched_lead` | Everything in `basic_lead` plus the Claude intent score | **$0.015/record** |
+| `basic_lead` | Discovery + website crawl + DNS/MX check | $0.002/record |
+| `enriched_lead` | Everything in `basic_lead` plus the Claude buying-intent score | $0.015/record |
 
-The LLM step costs roughly 7x the rest of the waterfall combined - kept as a separate tier so a basic run never silently absorbs that cost.
+A BYOK Hunter.io or People Data Labs key is billed by that provider directly to your own account - never marked up or folded into either tier above.
 
-## Compliance
+## Support & Enterprise SLA
 
-No CAPTCHA-solving, no fingerprint spoofing, no WAF/OAuth-gate bypass anywhere in this Actor. Google Maps is excluded from discovery entirely (see "Why use this Actor?" above) - OpenStreetMap's Overpass API is used instead, under a license that explicitly permits this use. Every outbound call either hits a genuinely open API/license or is explicitly customer-authorized (your own BYOK key).
-
-## Known limitations
-
-- A record only proceeds past OSM discovery if it carries a `website`/`contact:*` tag - a real, honest coverage gap versus a source like Google's business listings, disclosed rather than hidden.
-- A JS-rendered single-page site degrades to `websiteContentUnavailable: true` rather than escalating to a headless browser (kept out of this Actor's compliance posture on purpose).
-- `intentScore` is a heuristic LLM read of public page text only - never a verified fact, always paired with its own disclaimer field.
-
-Questions or a source-coverage request? Use the Issues tab - custom extensions are available.
+This Actor is built and maintained by an independent developer, not a staffed vendor team - there is no dedicated support desk or contractual uptime SLA on offer. Questions, bugs, or source-coverage requests are handled through the Apify Store's Issues tab and are typically addressed within 48 hours.
