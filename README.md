@@ -86,6 +86,45 @@ apify call actor-18-b2b-lead-magnet --input '{
 
 Every outbound call - OSM Overpass, the discovered business's own website, and (when configured) Hunter.io, People Data Labs, or the Anthropic API - goes through a shared `fetchWithRetry` helper with exponential-backoff retry (each retry's delay doubles from a 500ms base), triggered on network errors, HTTP 429, and any 5xx response; individual call sites configure 1-2 retries for their specific external host. A 4xx response other than 429 (e.g. a 404 or a BYOK vendor's 401) is returned as-is rather than retried, so callers can inspect and handle it directly. If a business's site can't be fetched, is disallowed by robots.txt, or looks like a client-rendered SPA with no server-delivered content, the record is marked `websiteContentUnavailable: true` rather than escalating to a headless browser - a disclosed coverage gap, not a silent failure. Cross-run lead identity (`skipKnownLeads` and the `is_new` field) is persisted in a named Apify key-value store, capped at the 20,000 most-recently-seen leads, so it survives independently of any single run.
 
+## Instant Terminal Run (cURL)
+
+Runs synchronously and returns the resulting dataset items directly in the response - no polling needed. Get your token from [console.apify.com/settings/integrations](https://console.apify.com/settings/integrations).
+
+```bash
+curl -X POST "https://api.apify.com/v2/acts/5QufcYxRkFNHM4h8K/run-sync-get-dataset-items?token=<YOUR_API_TOKEN>" \
+  -H "Content-Type: application/json" \
+  -d '{
+  "discoveryMode": "seedList",
+  "seedList": [
+    "apify.com"
+  ],
+  "maxLeads": 10,
+  "includeIntentScore": false
+}'
+```
+
+## Sample Extracted Dataset (JSON)
+
+One real record from this Actor's own dataset, matching `.actor/dataset_schema.json`:
+
+```json
+{
+  "record_id": "seed:3f9a1c2b8e7d4f0a",
+  "event_type": "NEW_LISTING",
+  "scraped_at": "2026-09-08T14:00:00.000Z",
+  "is_new": true,
+  "source_url": "https://acme.com",
+  "website": "https://acme.com",
+  "emailsFound": [
+    "contact@acme.com"
+  ],
+  "emailPlausible": true,
+  "emailPlausibilityMethod": "mx_record_present",
+  "intentScore": 62,
+  "intentScoreRationale": "Careers page lists 3 open roles; HubSpot tag present on homepage."
+}
+```
+
 ## Pricing (Pay-Per-Event)
 
 This Actor uses pay-per-event pricing with two tiers, never blended:
