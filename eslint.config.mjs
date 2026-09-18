@@ -6,7 +6,13 @@ import tsEslint from 'typescript-eslint';
 
 // eslint-disable-next-line import-x/no-default-export
 export default [
-    { ignores: ['**/dist', '**/test', '**/mcp', 'eslint.config.mjs'] },
+    // mcp/ is deliberately outside tsconfig.json's "include" (it's a
+    // separate MCP-tool entry point, not part of the dist/main.js build) -
+    // type-aware linting via parserOptions.project can't parse a file
+    // outside the TS project, so it's excluded here rather than forced into
+    // the main build's project scope. examples/ is the same situation: the
+    // README's runnable Node.js/Python examples aren't part of src/'s build.
+    { ignores: ['**/dist', '**/test', '**/mcp', '**/examples', 'eslint.config.mjs'] },
     ...apify,
     prettier,
     {
