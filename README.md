@@ -1,6 +1,6 @@
 # B2B Lead Enrichment Engine - Contact Discovery & Buying-Intent Scoring (Global)
 
-[![Run on Apify](https://apify.com/img/run-on-apify.svg)](https://apify.com/stefano_seggio/actor-18-b2b-lead-magnet)
+[![Run on Apify](https://apify.com/ext/run-on-apify.png)](https://apify.com/stefano_seggio/actor-18-b2b-lead-magnet)
 
 [![Built for Apify](https://img.shields.io/badge/Built%20for-Apify-1a1a2e?logo=apify&logoColor=white)](https://apify.com)
 [![Pay-Per-Event pricing](https://img.shields.io/badge/Pay--Per--Event-from%20%240.002%2Frecord-brightgreen)](#cost--byok-disclosure)
@@ -119,6 +119,61 @@ apify call actor-18-b2b-lead-magnet --input '{
 }'
 ```
 
+## Use this from Claude Desktop, Cursor, or Windsurf (via MCP)
+
+This Actor is also reachable through Apify's own hosted `@apify/actors-mcp-server` at `https://mcp.apify.com`, scoped to just this one Actor via a `?tools=stefano_seggio/actor-18-b2b-lead-magnet` query string - your MCP client gets tool access to this Actor alone, not the rest of the fleet. Get your own token from [Apify Console → Settings → Integrations](https://console.apify.com/settings/integrations) first.
+
+**Claude Desktop** (`claude_desktop_config.json`) - uses the `mcp-remote` stdio bridge, not a direct URL. Note: `mcp-remote` does not expand shell environment variables inside this JSON string, so paste your real token literally in place of `${APIFY_TOKEN}` below, and keep this file out of version control:
+
+```json
+{
+  "mcpServers": {
+    "delta-registry-actor-18-b2b-lead-magnet": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "mcp-remote",
+        "https://mcp.apify.com/?tools=stefano_seggio/actor-18-b2b-lead-magnet",
+        "--header",
+        "Authorization: Bearer ${APIFY_TOKEN}"
+      ]
+    }
+  }
+}
+```
+
+**Cursor** (`.cursor/mcp.json` or `~/.cursor/mcp.json`) - native HTTP transport:
+
+```json
+{
+  "mcpServers": {
+    "delta-registry-actor-18-b2b-lead-magnet": {
+      "url": "https://mcp.apify.com/?tools=stefano_seggio/actor-18-b2b-lead-magnet",
+      "headers": {
+        "Authorization": "Bearer ${APIFY_TOKEN}"
+      }
+    }
+  }
+}
+```
+
+**Windsurf** (`~/.codeium/windsurf/mcp_config.json`) - uses `serverUrl`, not `url`. Unlike Claude Desktop's `mcp-remote` bridge, Windsurf's `${env:...}` syntax genuinely resolves from your environment at runtime:
+
+```json
+{
+  "mcpServers": {
+    "delta-registry-actor-18-b2b-lead-magnet": {
+      "serverUrl": "https://mcp.apify.com/?tools=stefano_seggio/actor-18-b2b-lead-magnet",
+      "headers": {
+        "Authorization": "Bearer ${env:APIFY_TOKEN}"
+      }
+    }
+  }
+}
+```
+
+Want every actor in the fleet available to one MCP client instead of just this one? See [`delta-registry-website/MCP_INTEGRATION.md`](https://github.com/stefanoseggio/delta-registry-website/blob/main/MCP_INTEGRATION.md) for the full 28-actor closed-scope config.
+
 ## Input & Output Schema
 
 ### Input
@@ -167,6 +222,7 @@ One real record from this Actor's own dataset, matching [`.actor/dataset_schema.
 | `scraped_at` | string | ISO-8601 timestamp of this enrichment. |
 | `is_new` | boolean \| null | `true` if this exact business (by OSM id, or normalized name+domain for seed-list leads) was never seen in a prior run of this Actor; tracked regardless of whether `skipKnownLeads` is on. |
 | `source_url` | string \| null | The business's own website, when known. |
+| `discoverySource` | string | `seedList` or `osm` - which discovery path (Mode A or Mode B) produced this lead. |
 | `website` | string \| null | Same as `source_url`; included for convenience in the overview view. |
 | `emailsFound` | string[] | `mailto:` links and regex-matched addresses found on the crawled page(s). |
 | `emailPlausible` | boolean \| null | `true` when the domain has a non-null MX record (`dns.promises.resolveMx`); `null` when no domain was available to check. |
