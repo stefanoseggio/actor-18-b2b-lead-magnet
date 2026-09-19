@@ -8,7 +8,7 @@ import { computeIntentScore } from './enrichment/intentScore.js';
 import { crawlWebsite, extractDomain, type WebsiteCrawlResult } from './enrichment/websiteCrawl.js';
 import { computeRecordId } from './recordId.js';
 import { type ActorInput,ActorInputSchema } from './schemas.js';
-import { loadState, saveState } from './state.js';
+import { loadState, saveState, type SeenLeadsState } from './state.js';
 import { normalizeToUms } from './umsNormalizer.js';
 
 // Two distinct PPE event names, never blended into one flat rate - the LLM
@@ -58,7 +58,7 @@ async function run(): Promise<void> {
     const newlySeenIds: string[] = [];
 
     try {
-        const candidates = await discoverCandidates(input);
+        const candidates = await discoverCandidates(input, state);
         log.info(`Discovered ${candidates.length} candidate(s) via discoveryMode="${input.discoveryMode}".`);
 
         let pushed = 0;
@@ -102,12 +102,24 @@ async function run(): Promise<void> {
     }
 }
 
-async function discoverCandidates(input: ActorInput): Promise<Candidate[]> {
+async function discoverCandidates(input: ActorInput, state: SeenLeadsState): Promise<Candidate[]> {
     if (input.discoveryMode === 'osmOverpass') {
         if (!input.overpassBbox) {
             throw new Error('overpassBbox is required when discoveryMode is "osmOverpass".');
         }
-        const osmCandidates = await discoverViaOverpass(input.overpassBbox, input.maxLeads);
+        // Windowing, not real pagination: excluding every osm-sourced id
+        // already in state.seen (regardless of skipKnownLeads, and
+        // regardless of which bbox first recorded it - an id lookup is
+        // precise, so a stale id from a different bbox simply never
+        // matches this one's query) is what lets a repeat run on an
+        // unchanged bbox reach further into Overpass's own result order
+        // instead of re-matching the same leading subset every time. See
+        // discoverViaOverpass's doc comment for what this does and doesn't
+        // fix.
+        const excludeOsmIds = Object.keys(state.seen)
+            .filter((recordId) => recordId.startsWith('osm:'))
+            .map((recordId) => recordId.slice('osm:'.length));
+        const osmCandidates = await discoverViaOverpass(input.overpassBbox, input.maxLeads, excludeOsmIds);
         return osmCandidates.map((c) => ({
             discoverySource: 'osm' as const,
             name: c.name,
