@@ -1,6 +1,6 @@
 {
     "name": "actor-18-b2b-lead-magnet",
-    "version": "1.1.0",
+    "version": "1.2.0",
     "type": "module",
     "description": "Universal B2B Lead Magnet & Intent Enricher: seed-list or OpenStreetMap Overpass discovery (Google Maps intentionally excluded - see Maps/Earth Additional ToS conflict), own-site crawl + DNS/MX email-plausibility pre-filter, optional BYOK Hunter.io/People Data Labs enrichment, and an optional Claude Haiku 4.5 intent score. Two-tier PPE billing (basic_lead / enriched_lead), zero CAPTCHA/fingerprint/WAF-bypass.",
     "engines": {
