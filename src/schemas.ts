@@ -7,11 +7,17 @@ import { z } from 'zod';
 export const DiscoveryModeSchema = z.enum(['seedList', 'osmOverpass']);
 export type DiscoveryMode = z.infer<typeof DiscoveryModeSchema>;
 
+// Timeout-budget cap, not an arbitrary round number: see .actor/input_schema.json's
+// maxLeads description and the fix commit for the full worst-case arithmetic
+// against src/http.ts's fetchWithRetry retry/backoff constants and this
+// Actor's real defaultRunOptions.timeoutSecs=3600s.
+export const MAX_LEADS_CAP = 500;
+
 export const ActorInputSchema = z.object({
     discoveryMode: DiscoveryModeSchema.default('seedList'),
     seedList: z.array(z.string()).default([]),
     overpassBbox: z.string().optional(),
-    maxLeads: z.number().int().min(1).max(5000).default(50),
+    maxLeads: z.number().int().min(1).max(MAX_LEADS_CAP).default(50),
     includeIntentScore: z.boolean().default(false),
     hunterApiKey: z.string().min(1).optional(),
     peopleDataLabsApiKey: z.string().min(1).optional(),
