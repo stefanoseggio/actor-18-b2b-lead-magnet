@@ -116,6 +116,10 @@ async function discoverCandidates(input: ActorInput): Promise<Candidate[]> {
         }));
     }
 
+    if (!input.seedList || input.seedList.length === 0) {
+        throw new Error('seedList must contain at least one URL/entry when discoveryMode is "seedList".');
+    }
+
     return parseSeedList(input.seedList).map((c) => ({
         discoverySource: 'seedList' as const,
         name: c.name,
