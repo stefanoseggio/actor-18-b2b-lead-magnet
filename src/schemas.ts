@@ -57,7 +57,7 @@ const UmsBaseSchema = z.object({
 
 const ByokProviderResultSchema = z.object({
     used: z.boolean(),
-    data: z.record(z.unknown()).nullable(),
+    data: z.record(z.string(), z.unknown()).nullable(),
     error: z.string().nullable(),
 });
 
