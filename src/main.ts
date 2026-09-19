@@ -20,6 +20,16 @@ import { normalizeToUms } from './umsNormalizer.js';
 const BASIC_LEAD_EVENT = 'basic_lead';
 const ENRICHED_LEAD_EVENT = 'enriched_lead';
 
+// Dataset records are already pushed one-by-one as the loop below goes (see
+// Actor.pushData() call per candidate), so a mid-run timeout never loses
+// already-processed leads from the dataset. But saveState() below was only
+// ever called at the very end of the loop or on a charge-limit stop - never
+// on a timeout kill. Checkpointing it every STATE_SAVE_INTERVAL pushed leads
+// bounds how many already-pushed-and-charged leads could be re-processed
+// (and re-charged) on a future skipKnownLeads=true run after this run is
+// killed mid-way by hitting defaultRunOptions.timeoutSecs.
+const STATE_SAVE_INTERVAL = 20;
+
 const UNAVAILABLE_CRAWL: WebsiteCrawlResult = {
     finalUrl: null,
     emailsFound: [],
@@ -83,6 +93,10 @@ async function run(): Promise<void> {
             await Actor.pushData(record);
             pushed += 1;
             newlySeenIds.push(recordId);
+
+            if (newlySeenIds.length % STATE_SAVE_INTERVAL === 0) {
+                await saveState(state, newlySeenIds, runAt);
+            }
 
             const eventName = input.includeIntentScore ? ENRICHED_LEAD_EVENT : BASIC_LEAD_EVENT;
             const { eventChargeLimitReached } = await Actor.charge({ eventName, count: 1 });

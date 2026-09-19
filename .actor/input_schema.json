@@ -29,10 +29,10 @@
         "maxLeads": {
             "title": "Max leads this run",
             "type": "integer",
-            "description": "Hard cap on how many candidates are enriched and charged this run.",
+            "description": "Hard cap on how many candidates are enriched and charged this run. Capped at 500 (down from a former 5000): every candidate is enriched strictly sequentially (website crawl + DNS check + optional BYOK/intent-score calls, each with its own retry/backoff), so this run's default 3600s (1 hour) timeout cannot safely fit a much larger sequential workload - see src/http.ts's fetchWithRetry for the retry/backoff constants this cap is sized against. Needing more than 500 leads in one run means either splitting the work across multiple runs or raising this Actor's own defaultRunOptions.timeoutSecs.",
             "default": 50,
             "minimum": 1,
-            "maximum": 5000
+            "maximum": 500
         },
         "includeIntentScore": {
             "title": "Include LLM intent score (Enriched Lead)",
