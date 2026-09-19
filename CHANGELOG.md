@@ -1,5 +1,24 @@
 # Changelog
 
+## [1.2.0](https://github.com/stefanoseggio/actor-18-b2b-lead-magnet/compare/actor-18-b2b-lead-magnet-v1.1.0...actor-18-b2b-lead-magnet-v1.2.0) (2026-09-19)
+
+
+### Features
+
+* cross-run lead dedup via named KV store (1.1.0) ([be470e5](https://github.com/stefanoseggio/actor-18-b2b-lead-magnet/commit/be470e5de4f397f9a59b036ab0cf3b8d81084acf))
+* standardize on multi-stage Dockerfile builder pattern ([#10](https://github.com/stefanoseggio/actor-18-b2b-lead-magnet/issues/10)) ([2ae81f4](https://github.com/stefanoseggio/actor-18-b2b-lead-magnet/commit/2ae81f47117f2bc687599d11897851adaa6a83bf))
+
+
+### Bug Fixes
+
+* actually ship dist/ - prior commit's build was a stale no-op ([a1abaa5](https://github.com/stefanoseggio/actor-18-b2b-lead-magnet/commit/a1abaa52fd0f20d48c7aa97222715a07d6318262))
+* bump transitive adm-zip to 0.6.1, resolving a HIGH-severity CVE ([#14](https://github.com/stefanoseggio/actor-18-b2b-lead-magnet/issues/14)) ([bfcef8a](https://github.com/stefanoseggio/actor-18-b2b-lead-magnet/commit/bfcef8a5f89598eef418cac0dc8466ffe983b271))
+* cap maxLeads at 500 so worst case fits this actor's 3600s timeout ([#11](https://github.com/stefanoseggio/actor-18-b2b-lead-magnet/issues/11)) ([d1f49ca](https://github.com/stefanoseggio/actor-18-b2b-lead-magnet/commit/d1f49ca60b097cd697a0da2f5175e3b8bf1bb7df))
+* **ci:** pass RELEASE_PLEASE_TOKEN so release PRs skip the bot-approval gate ([fd5e5ba](https://github.com/stefanoseggio/actor-18-b2b-lead-magnet/commit/fd5e5ba9079dff9515ad51e2221ee04bf0ba6d40))
+* **discovery:** exclude already-seen OSM ids from repeat Overpass runs ([#13](https://github.com/stefanoseggio/actor-18-b2b-lead-magnet/issues/13)) ([50d5776](https://github.com/stefanoseggio/actor-18-b2b-lead-magnet/commit/50d5776cbfd6557bfc69ecd5977d9620d2aa279d))
+* restore dist/ tracking, reverting a regression from the standardize-repo pass ([#9](https://github.com/stefanoseggio/actor-18-b2b-lead-magnet/issues/9)) ([593d0a2](https://github.com/stefanoseggio/actor-18-b2b-lead-magnet/commit/593d0a25b9d561b56108e7436d36a49b6dda6e13))
+* validate seedList is non-empty when discoveryMode is "seedList" ([#12](https://github.com/stefanoseggio/actor-18-b2b-lead-magnet/issues/12)) ([2c9b9e9](https://github.com/stefanoseggio/actor-18-b2b-lead-magnet/commit/2c9b9e9d700e51d23adde2c33f66e29ac0965e9b))
+
 ## 1.1.0 - 2026-09-08
 
 ### Added
